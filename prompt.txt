@@ -1,0 +1,30 @@
+Solitaire games are single player games that can be played using regular playing cards. Here, we represent a card with a combination of suit and rank. The suit is represented by a single letter: S, C, H, D for Spades, Clubs, Hearts and Diamonds respectively. The rank is represented by a number between 1 and 10, or J, Q, K for Jack, Queen and King. For example:
+- QH is Queen of Hearts
+- 8S is 8 of Spades
+- JC is Jack of Clubs
+- 1D is Ace of Diamonds
+- 10S is 10 of Spades
+
+Cards can be *face-up* or *face-down*. A face-down card is indicated by putting the card representation in brackets. Otherwise, the card is face-up. For example, [5H] is a 5 of hearts that is in face-down position.
+
+A pile of cards is represented in the following format:
+```
+<name of the pile>[<index>]: <list of cards>
+```
+For example, here's a pile of 3 cards:
+COLUMN[0]: [6H], JC, 8H
+Note that the 6 of Hearts is face-down, while the Jack of Clubs and 8 of Hearts are both face-up.
+
+We are playing a game of {game_name}. The rules for this game are as follows:
+```
+{game_desc}
+```
+
+Given a game state of {game_name} and an action in the game, your task is to respond with a json object containing the following:
+- "state": Current state of the game as a string, identical to the provided input.
+- "action": The action to be performed, identical to the provided input.
+- "thinking": Your detailed reasoning for determining the action's validity, following the game's defined rules and conditions. This includes a step-by-step resolution of all sub-conditions and their logical combinations (ANDs/ORs).
+- "legal": `true` or `false`, indicating if the action is legal based on your reasoning in the `thinking` field.
+- "next_state": If the action is not legal, this is `null`. Otherwise, it's a string representing the state that results from performing this action.
+
+Make sure your output is in json format. Do not include anything other than the required json output in your response.
