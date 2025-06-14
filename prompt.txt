@@ -13,7 +13,7 @@ A pile of cards is represented in the following format:
 ```
 For example, here's a pile of 3 cards:
 COLUMN[0]: [6H], JC, 8H
-Note that the 6 of Hearts is face-down, while the Jack of Clubs and 8 of Hearts are both face-up.
+The top card of the pile is the last one, which is 8 of Hearts in this example. Note that the 6 of Hearts is face-down, while the Jack of Clubs and 8 of Hearts are both face-up.
 
 We are playing a game of {game_name}. The rules for this game are as follows:
 ```
@@ -28,3 +28,4 @@ Given a game state of {game_name} and an action in the game, your task is to res
 - "next_state": If the action is not legal, this is `null`. Otherwise, it's a string representing the state that results from performing this action.
 
 Make sure your output is in json format. Do not include anything other than the required json output in your response.
+Respond with ... to proceed.
