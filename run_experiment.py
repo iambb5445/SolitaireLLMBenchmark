@@ -37,15 +37,15 @@ def ask_until_fail(request: str, connector: LLMConnector) -> dict[str, str]:
         if fail_count == max_fail_count:
             print(f"LLM response failure {max_fail_count} times, aborted")
 
-def fewshot_split(samples: list[dict]) -> tuple[list[dict], list[dict]]:
-    rand = random.Random(fewshot_seed)
+def fewshot_split(samples: list[dict], seed: int) -> tuple[list[dict], list[dict]]:
+    rand = random.Random(seed)
     fewshot_indices = rand.sample(range(len(samples)), fewshot_size)
     fewshot_samples = [samples[i] for i in fewshot_indices]
     samples = [samples[i] for i in range(len(samples)) if not i in fewshot_indices]
     return samples, fewshot_samples
 
-def get_single_sample_fewshot(samples: list[dict], this_sample_id: int):
-    rand = random.Random(fewshot_seed)
+def get_single_sample_fewshot(samples: list[dict], this_sample_id: int, seed: int):
+    rand = random.Random(seed)
     fewshot_indices = rand.sample([i for i in range(len(samples)) if i != this_sample_id], fewshot_size)
     fewshot_samples = [samples[i] for i in fewshot_indices]
     return fewshot_samples
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     game_desc: str = dataset['description']
     samples: list[dict] = dataset['samples']
     fewshot: list[dict]
-    samples, fewshot = fewshot_split(samples)
+    samples, fewshot = fewshot_split(samples, fewshot_seed)
     prompt = fill_prompt(prompt_template, game_name, game_desc)
     connector = OpenAIChat(OpenAIChat.OpenAIModel.GPT_4O_mini)
     # connector = DeepSeekChat(DeepSeekChat.DeepSeekModel.DEEP_SEEK_CHAT)

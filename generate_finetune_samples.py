@@ -37,12 +37,13 @@ if __name__ == '__main__':
         prompt = run_exper.fill_prompt(prompt_template, game_name, game_desc)
         connector = OpenAIChat(OpenAIChat.OpenAIModel.GPT_4O_mini)
         if unified_finetuning:
-            samples, fewshot = run_exper.fewshot_split(samples)
+            samples, fewshot = run_exper.fewshot_split(samples, run_exper.fewshot_seed)
             run_exper.initiate_conversation(connector, prompt, fewshot)
+        fewshot_rnd = random.Random(run_exper.fewshot_seed) # only used for non-unified
         for i, sample in enumerate(samples):
             connector_copy = connector.copy()
             if not unified_finetuning:
-                fewshot = run_exper.get_single_sample_fewshot(samples, i)
+                fewshot = run_exper.get_single_sample_fewshot(samples, i, fewshot_rnd.randint(0, 1000000))
                 run_exper.initiate_conversation(connector_copy, prompt, fewshot)
             json_samples.append(get_finetune(connector_copy, sample))
     random.shuffle(json_samples)
