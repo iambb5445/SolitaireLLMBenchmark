@@ -21,7 +21,8 @@ def get_finetune(connector: OpenAIChat, sample: dict) -> dict:
 if __name__ == '__main__':
     with open(run_exper.prompt_filename, 'r') as f:
         prompt_template = f.read()
-    dataset_filenames = sys.argv[1:]
+    samples_per_file = int(sys.argv[1])
+    dataset_filenames = sys.argv[2:]
     base_dataset_names = '-'.join([os.path.splitext(os.path.basename(dataset_filename))[0] for dataset_filename in dataset_filenames])
     out_filename = os.path.join(f'finetune_dataset', f'{base_dataset_names}_{int(time.time())}.json')
     json_samples: list[dict] = []
@@ -30,7 +31,8 @@ if __name__ == '__main__':
             dataset = json.load(f)
         game_name: str = dataset['name']
         game_desc: str = dataset['description']
-        samples: list[dict] = dataset['samples']
+        samples: list[dict] = dataset['samples'][:samples_per_file]
+        print(f'{len(samples)} samples from {dataset_filename}')
         fewshot: list[dict]
         # choose randomly, equal valid and invalid
         # possibly try to have different moves
@@ -47,6 +49,8 @@ if __name__ == '__main__':
                 run_exper.initiate_conversation(connector_copy, prompt, fewshot)
             json_samples.append(get_finetune(connector_copy, sample))
     random.shuffle(json_samples)
+    print(f"total sample count: {len(json_samples)}")
+    print(f"saving as: {out_filename}")
     with open(f'{out_filename}.jsonl', 'a') as outfile:
         for json_sample in json_samples:
             json.dump(json_sample, outfile)
