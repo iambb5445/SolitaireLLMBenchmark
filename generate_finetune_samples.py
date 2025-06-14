@@ -10,6 +10,7 @@ import os
 import run_experiment as run_exper
 
 thread_count = 10
+unified_finetuning: bool = False
 
 def get_finetune(connector: OpenAIChat, sample: dict) -> dict:
     request = run_exper.sample_to_request(sample)
@@ -20,22 +21,33 @@ def get_finetune(connector: OpenAIChat, sample: dict) -> dict:
 if __name__ == '__main__':
     with open(run_exper.prompt_filename, 'r') as f:
         prompt_template = f.read()
-    dataset_filename = sys.argv[1]
-    with open(dataset_filename, 'r') as f:
-        dataset = json.load(f)
-    game_name: str = dataset['name']
-    game_desc: str = dataset['description']
-    samples: list[dict] = dataset['samples']
-    fewshot: list[dict]
-    samples, fewshot = run_exper.fewshot_split(samples)
-    prompt = run_exper.fill_prompt(prompt_template, game_name, game_desc)
-    connector = OpenAIChat(OpenAIChat.OpenAIModel.GPT_4O_mini)
-    run_exper.initiate_conversation(connector, prompt, fewshot)
-    base_dataset_name = os.path.splitext(os.path.basename(dataset_filename))[0]
-    out_filename = os.path.join(f'finetune_dataset', f'{base_dataset_name}_{int(time.time())}.json')
-    with open(f'{out_filename}.jsonl', 'w') as outfile:
-        for sample in samples:
-            json_sample = get_finetune(connector.copy(), sample)
+    dataset_filenames = sys.argv[1:]
+    base_dataset_names = '-'.join([os.path.splitext(os.path.basename(dataset_filename))[0] for dataset_filename in dataset_filenames])
+    out_filename = os.path.join(f'finetune_dataset', f'{base_dataset_names}_{int(time.time())}.json')
+    json_samples: list[dict] = []
+    for dataset_filename in dataset_filenames:
+        with open(dataset_filename, 'r') as f:
+            dataset = json.load(f)
+        game_name: str = dataset['name']
+        game_desc: str = dataset['description']
+        samples: list[dict] = dataset['samples']
+        fewshot: list[dict]
+        # choose randomly, equal valid and invalid
+        # possibly try to have different moves
+        prompt = run_exper.fill_prompt(prompt_template, game_name, game_desc)
+        connector = OpenAIChat(OpenAIChat.OpenAIModel.GPT_4O_mini)
+        if unified_finetuning:
+            samples, fewshot = run_exper.fewshot_split(samples)
+            run_exper.initiate_conversation(connector, prompt, fewshot)
+        for i, sample in enumerate(samples):
+            connector_copy = connector.copy()
+            if not unified_finetuning:
+                fewshot = run_exper.get_single_sample_fewshot(samples, i)
+                run_exper.initiate_conversation(connector_copy, prompt, fewshot)
+            json_samples.append(get_finetune(connector_copy, sample))
+    random.shuffle(json_samples)
+    with open(f'{out_filename}.jsonl', 'a') as outfile:
+        for json_sample in json_samples:
             json.dump(json_sample, outfile)
             outfile.write('\n')
     # results = {

@@ -44,6 +44,12 @@ def fewshot_split(samples: list[dict]) -> tuple[list[dict], list[dict]]:
     samples = [samples[i] for i in range(len(samples)) if not i in fewshot_indices]
     return samples, fewshot_samples
 
+def get_single_sample_fewshot(samples: list[dict], this_sample_id: int):
+    rand = random.Random(fewshot_seed)
+    fewshot_indices = rand.sample([i for i in range(len(samples)) if i != this_sample_id], fewshot_size)
+    fewshot_samples = [samples[i] for i in fewshot_indices]
+    return fewshot_samples
+
 def sample_to_response(sample: dict) -> dict:
     response: dict[str, str] = {
         "state": sample['current_state_view'],
