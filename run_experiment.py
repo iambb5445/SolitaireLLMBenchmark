@@ -14,6 +14,7 @@ fewshot_size = 4
 max_fail_count = 3
 thread_count = 5
 unified_fewshot: bool = False
+unifrom_game_id_sampling: bool = True
 
 def extract_response(response: str) -> tuple[dict[str, str], bool]:
     if '```json' in response: # deepseek
@@ -96,17 +97,35 @@ if __name__ == '__main__':
         prompt_template = f.read()
     dataset_filename: str = sys.argv[1]
     max_count: int = int(sys.argv[2])
-    seed: int = int(sys.argv[3]) # use -1 for no shuffle
+    seed: int = int(sys.argv[3])
     with open(dataset_filename, 'r') as f:
         dataset = json.load(f)
     game_name: str = dataset['name']
     game_desc: str = dataset['description']
     samples: list[dict] = dataset['samples']
-    if seed != -1:
-        random.Random(seed).shuffle(samples)
+    sampling_rnd = random.Random(seed)
+    sampling_rnd.shuffle(samples)
+    if unifrom_game_id_sampling:
+        sample_by_game_id = {}
+        for sample in samples:
+            game_id = sample['game_id']
+            sample_by_game_id[game_id] = sample_by_game_id.get(game_id, []) + [sample]
+        sample_per_game = max_count // len(sample_by_game_id)
+        assert sample_per_game * len(sample_by_game_id) == max_count, "Max count not divisible by the number of games in the dataset, please use non uniform game id sampling, or add alternative methods."
+        new_samples = []
+        for game_id, game_samples in sample_by_game_id.items():
+            new_samples += game_samples[:sample_per_game]
+        remaining = max_count - len(new_samples)
+        if remaining != 0:
+            input(f"WARNING: THIS IS IMPORTANT! WE COULDNT SAMPLE UNIFORMLY, BECAUSE NOT ENOUGH SAMPLES PER GAME EXIST. {remaining} SAMPLES ARE ADDED RANDOMLY. PRESS ENTER TO CONTINUE")
+        assert len(new_samples) <= max_count
+        while len(new_samples) != max_count:
+            sample = samples[sampling_rnd.randint(0, len(samples) - 1)]
+            if sample not in new_samples:
+                new_samples.append(sample)
+        samples = new_samples
     else:
-        print("[Warning]: NO SHUFFLING!")
-    samples = samples[:max_count]
+        samples = samples[:max_count]
     fewshot: list[dict]
     prompt = fill_prompt(prompt_template, game_name, game_desc)
     connector = OpenAIChat(OpenAIChat.OpenAIModel.GPT_4O_mini)
@@ -130,7 +149,7 @@ if __name__ == '__main__':
     results['legal_count'] = sum([1 for sample in results['samples'] if sample['legal']])
 
     base_dataset_name = os.path.splitext(os.path.basename(dataset_filename))[0]
-    out_filename = os.path.join(f'results', f'{base_dataset_name}_{connector.model_name}_seed_{seed}_{int(time.time())}.json')
+    out_filename = os.path.join(f'results', f'{base_dataset_name}_{connector.model_name}_seed_{seed}_{unifrom_game_id_sampling}_{unified_fewshot}_{int(time.time())}.json')
     with open(out_filename, 'w') as f:
         json.dump(results, f, indent=4)
     print(f"Results saved as {out_filename}")
