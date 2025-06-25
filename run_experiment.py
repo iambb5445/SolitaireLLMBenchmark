@@ -12,7 +12,7 @@ prompt_filename = 'prompt.txt'
 fewshot_seed = 42
 fewshot_size = 4
 max_fail_count = 3
-thread_count = 5
+thread_count = 50
 unified_fewshot: bool = False
 unifrom_game_id_sampling: bool = True
 
