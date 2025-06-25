@@ -111,7 +111,9 @@ if __name__ == '__main__':
             game_id = sample['game_id']
             sample_by_game_id[game_id] = sample_by_game_id.get(game_id, []) + [sample]
         sample_per_game = max_count // len(sample_by_game_id)
-        assert sample_per_game * len(sample_by_game_id) == max_count, "Max count not divisible by the number of games in the dataset, please use non uniform game id sampling, or add alternative methods."
+        if sample_per_game * len(sample_by_game_id) != max_count:
+            input(f"Max count {max_count} not divisible by the number of games in the dataset {len(sample_by_game_id)}, please use non uniform game id sampling, or add alternative methods. PRESS ENTER TO CONTINUE")
+        print(f"Sampling {sample_per_game} samples per game")
         new_samples = []
         for game_id, game_samples in sample_by_game_id.items():
             new_samples += game_samples[:sample_per_game]
