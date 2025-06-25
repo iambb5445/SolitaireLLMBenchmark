@@ -110,22 +110,36 @@ if __name__ == '__main__':
         for sample in samples:
             game_id = sample['game_id']
             sample_by_game_id[game_id] = sample_by_game_id.get(game_id, []) + [sample]
-        sample_per_game = max_count // len(sample_by_game_id)
-        if sample_per_game * len(sample_by_game_id) != max_count:
-            input(f"Max count {max_count} not divisible by the number of games in the dataset {len(sample_by_game_id)}, please use non uniform game id sampling, or add alternative methods. PRESS ENTER TO CONTINUE")
-        print(f"Sampling {sample_per_game} samples per game")
-        new_samples = []
-        for game_id, game_samples in sample_by_game_id.items():
-            new_samples += game_samples[:sample_per_game]
-        remaining = max_count - len(new_samples)
-        if remaining != 0:
+        game_ids = list(sample_by_game_id.keys())
+        print(f"Total game count: {len(game_ids)}")
+        default_count_per_game = max_count // len(game_ids)
+        sample_count_per_game_id = {}
+        for game_id in game_ids:
+            sample_count_per_game_id[game_id] = min(default_count_per_game, len(sample_by_game_id[game_id]))
+        if sum(sample_count_per_game_id.values()) != max_count:
+            remaining = max_count - sum(sample_count_per_game_id.values())
             input(f"WARNING: THIS IS IMPORTANT! WE COULDNT SAMPLE UNIFORMLY, BECAUSE NOT ENOUGH SAMPLES PER GAME EXIST. {remaining} SAMPLES ARE ADDED RANDOMLY. PRESS ENTER TO CONTINUE")
-        assert len(new_samples) <= max_count
-        while len(new_samples) != max_count:
-            sample = samples[sampling_rnd.randint(0, len(samples) - 1)]
-            if sample not in new_samples:
-                new_samples.append(sample)
+            assert sum(sample_count_per_game_id.values()) <= max_count
+            while sum(sample_count_per_game_id.values()) != max_count:
+                order = [game_id for game_id in game_ids]
+                sampling_rnd.shuffle(order)
+                for game_id in order:
+                    if sample_count_per_game_id[game_id] < len(sample_by_game_id[game_id]):
+                        sample_count_per_game_id[game_id] += 1
+                    if sum(sample_count_per_game_id.values()) == max_count:
+                        break
+        print(f"Sampling {min(sample_count_per_game_id.values())} to {max(sample_count_per_game_id.values())} samples per game")
+        print("samples:", list(sample_count_per_game_id.values()))
+        for val in range(max(sample_count_per_game_id.values())):
+            existing = sum([1 if sample_count_per_game_id[game_id] == 3 else 0 for game_id in game_ids])
+            count = sum([1 if len(sample_by_game_id[game_id]) == 3 else 0 for game_id in game_ids])
+            assert existing == count, f"problem with value {val}: some games with this number of samples are not maxxed out"
+        input("Press enter to continue")
+        new_samples = []
+        for game_id in game_ids:
+            new_samples += sample_by_game_id[game_id][:sample_count_per_game_id[game_id]]
         samples = new_samples
+        assert len(samples) == max_count
     else:
         samples = samples[:max_count]
     fewshot: list[dict]
