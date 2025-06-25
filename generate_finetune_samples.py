@@ -10,7 +10,7 @@ import os
 import run_experiment as run_exper
 
 thread_count = 10
-unified_finetuning: bool = False
+unified_fewshot: bool = False
 
 def get_finetune(connector: OpenAIChat, sample: dict) -> dict:
     request = run_exper.sample_to_request(sample)
@@ -38,13 +38,13 @@ if __name__ == '__main__':
         # possibly try to have different moves
         prompt = run_exper.fill_prompt(prompt_template, game_name, game_desc)
         connector = OpenAIChat(OpenAIChat.OpenAIModel.GPT_4O_mini)
-        if unified_finetuning:
+        if unified_fewshot:
             samples, fewshot = run_exper.fewshot_split(samples, run_exper.fewshot_seed)
             run_exper.initiate_conversation(connector, prompt, fewshot)
         fewshot_rnd = random.Random(run_exper.fewshot_seed) # only used for non-unified
         for i, sample in enumerate(samples):
             connector_copy = connector.copy()
-            if not unified_finetuning:
+            if not unified_fewshot:
                 fewshot = run_exper.get_single_sample_fewshot(samples, i, fewshot_rnd.randint(0, 1000000))
                 run_exper.initiate_conversation(connector_copy, prompt, fewshot)
             json_samples.append(get_finetune(connector_copy, sample))

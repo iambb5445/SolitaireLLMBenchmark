@@ -13,6 +13,7 @@ fewshot_seed = 42
 fewshot_size = 4
 max_fail_count = 3
 thread_count = 5
+unified_fewshot: bool = False
 
 def extract_response(response: str) -> tuple[dict[str, str], bool]:
     if '```json' in response: # deepseek
@@ -80,7 +81,11 @@ def fill_prompt(prompt_template: str, game_name: str, game_desc: str) -> str:
                             .replace('{game_desc}', game_desc)
     return prompt
 
-def get_response(connector: LLMConnector, sample: dict) -> dict:
+def get_response(connector: LLMConnector, sample: dict, i: int, fs_subseed) -> dict:
+    if not unified_fewshot:
+        fewshot = get_single_sample_fewshot(samples, i, fs_subseed)
+        # print(i, samples[i]['game_id'], fewshot[0]['game_id'], fewshot[1]['game_id'], fewshot[2]['game_id'], fewshot[3]['game_id'])
+        initiate_conversation(connector, prompt, fewshot)
     request = sample_to_request(sample)
     response = ask_until_fail(json.dumps(request), connector)
     llm_sample = dict([(f'pred_{key}', value) for key, value in response.items()])
@@ -103,13 +108,15 @@ if __name__ == '__main__':
         print("[Warning]: NO SHUFFLING!")
     samples = samples[:max_count]
     fewshot: list[dict]
-    samples, fewshot = fewshot_split(samples, fewshot_seed)
     prompt = fill_prompt(prompt_template, game_name, game_desc)
     connector = OpenAIChat(OpenAIChat.OpenAIModel.GPT_4O_mini)
     # connector = DeepSeekChat(DeepSeekChat.DeepSeekModel.DEEP_SEEK_CHAT)
     # connector = GeminiChat(GeminiChat.GeminiModel.Gemini_15_Flash_002)
-    initiate_conversation(connector, prompt, fewshot)
-    result_samples: list[dict] = Parallel(n_jobs=thread_count)(delayed(get_response)(connector.copy(), sample) for sample in tqdm(samples)) # type: ignore
+    if unified_fewshot:
+        samples, fewshot = fewshot_split(samples, fewshot_seed)
+        initiate_conversation(connector, prompt, fewshot)
+    fewshot_rnd = random.Random(fewshot_seed) # only used for non-unified
+    result_samples: list[dict] = Parallel(n_jobs=thread_count)(delayed(get_response)(connector.copy(), sample, i, fewshot_rnd.randint(0, 1000000)) for i, sample in enumerate(tqdm(samples))) # type: ignore
     results = {
         'llm': connector.model_name,
         'dataset': dataset_filename,
