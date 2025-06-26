@@ -123,6 +123,9 @@ class OpenAILib(LLMConnector):
         # https://platform.openai.com/docs/guides/chat-completions/overview
         return {
                 'model': self.model_name,
+                # 'model': 'ft:gpt-4o-mini-2024-07-18:personal:ft0-1-100-blindalleys:BmS1GpPI',
+                # 'model': 'ft:gpt-4o-mini-2024-07-18:personal:ft0-2-100-blindalleys:BmSuJIgt',
+                'model': 'ft:gpt-4o-mini-2024-07-18:personal:ft0-3-300-blindalleys:BmT29Xyu',
                 # 'model': 'ft:gpt-4o-mini-2024-07-18:personal:2k-100-blindalleys-miniklondike-spider-50-each:BiUFQWa2',
                 # 'model': 'ft:gpt-4o-mini-2024-07-18:personal:minispider-dfsbot-1749143106-train-100-1749146401:Bf9LUd2L', # 100 finetuned model
                 # 'model': 'ft:gpt-4o-mini-2024-07-18:personal:minispider-dfsbot-1748995473-train-1748995522:BeWVSTbw', # 1118 finetuned model

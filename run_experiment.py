@@ -27,14 +27,17 @@ def extract_response(response: str) -> tuple[dict[str, str], bool]:
 
 def ask_until_fail(request: str, connector: LLMConnector) -> dict[str, str]:
     fail_count = 0
+    response = None
+    response_txt: str = ''
     while True:
         try:
-            response, valid = extract_response(connector.ask(request))
+            response_txt = connector.ask(request)
+            response, valid = extract_response(response_txt)
             if not valid:
                 raise Exception(f"tags missing from reponse. existing tags: {response.keys()}")
             return response
         except Exception as e:
-            print(f"Response failed: {e}")
+            print(f"Response failed: {e}, response: {response_txt}\n-------------------\n\n")
         fail_count += 1
         if fail_count == max_fail_count:
             print(f"LLM response failure {max_fail_count} times, aborted")
@@ -92,18 +95,7 @@ def get_response(connector: LLMConnector, sample: dict, i: int, fs_subseed) -> d
     llm_sample = dict([(f'pred_{key}', value) for key, value in response.items()])
     return sample_to_response(sample)|llm_sample
 
-if __name__ == '__main__':
-    with open(prompt_filename, 'r') as f:
-        prompt_template = f.read()
-    dataset_filename: str = sys.argv[1]
-    max_count: int = int(sys.argv[2])
-    seed: int = int(sys.argv[3])
-    with open(dataset_filename, 'r') as f:
-        dataset = json.load(f)
-    game_name: str = dataset['name']
-    game_desc: str = dataset['description']
-    samples: list[dict] = dataset['samples']
-    sampling_rnd = random.Random(seed)
+def prepare_samples(samples: list[dict], max_count: int, sampling_rnd: random.Random, unifrom_game_id_sampling: bool) -> list[dict]:
     sampling_rnd.shuffle(samples)
     if unifrom_game_id_sampling:
         sample_by_game_id = {}
@@ -130,18 +122,31 @@ if __name__ == '__main__':
                         break
         print(f"Sampling {min(sample_count_per_game_id.values())} to {max(sample_count_per_game_id.values())} samples per game")
         print("samples:", list(sample_count_per_game_id.values()))
-        for val in range(max(sample_count_per_game_id.values())):
-            existing = sum([1 if sample_count_per_game_id[game_id] == 3 else 0 for game_id in game_ids])
-            count = sum([1 if len(sample_by_game_id[game_id]) == 3 else 0 for game_id in game_ids])
-            assert existing == count, f"problem with value {val}: some games with this number of samples are not maxxed out"
+        for val in range(max(sample_count_per_game_id.values()) - 1):
+            existing = sum([1 if sample_count_per_game_id[game_id] == val else 0 for game_id in game_ids])
+            count = sum([1 if len(sample_by_game_id[game_id]) == val else 0 for game_id in game_ids])
+            assert existing == count, f"problem with value {val}: some games with this number of samples are not maxxed out. games:{count} != sampling:{existing}"
         input("Press enter to continue")
         new_samples = []
         for game_id in game_ids:
             new_samples += sample_by_game_id[game_id][:sample_count_per_game_id[game_id]]
-        samples = new_samples
-        assert len(samples) == max_count
+        assert len(new_samples) == max_count
+        return new_samples
     else:
-        samples = samples[:max_count]
+        return samples[:max_count]
+
+if __name__ == '__main__':
+    with open(prompt_filename, 'r') as f:
+        prompt_template = f.read()
+    dataset_filename: str = sys.argv[1]
+    max_count: int = int(sys.argv[2])
+    seed: int = int(sys.argv[3])
+    with open(dataset_filename, 'r') as f:
+        dataset = json.load(f)
+    game_name: str = dataset['name']
+    game_desc: str = dataset['description']
+    sampling_rnd = random.Random(seed)
+    samples: list[dict] = prepare_samples(dataset['samples'], max_count, sampling_rnd, unifrom_game_id_sampling)
     fewshot: list[dict]
     prompt = fill_prompt(prompt_template, game_name, game_desc)
     connector = OpenAIChat(OpenAIChat.OpenAIModel.GPT_4O_mini)

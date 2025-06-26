@@ -9,8 +9,9 @@ import time
 import os
 import run_experiment as run_exper
 
-thread_count = 10
+thread_count = 50
 unified_fewshot: bool = False
+uniform_game_id_sampling = True
 
 def get_finetune(connector: OpenAIChat, sample: dict) -> dict:
     request = run_exper.sample_to_request(sample)
@@ -23,15 +24,15 @@ if __name__ == '__main__':
         prompt_template = f.read()
     samples_per_file = int(sys.argv[1])
     dataset_filenames = sys.argv[2:]
-    base_dataset_names = '-'.join([os.path.splitext(os.path.basename(dataset_filename))[0] for dataset_filename in dataset_filenames])
-    out_filename = os.path.join(f'finetune_dataset', f'{base_dataset_names}_{int(time.time())}.json')
+    base_dataset_names = '-'.join([(os.path.splitext(os.path.basename(dataset_filename))[0]).split('.')[0] for dataset_filename in dataset_filenames])
+    out_filename = os.path.join(f'finetune_dataset', f's{samples_per_file}_per_{base_dataset_names}_{int(time.time())}.json')
     json_samples: list[dict] = []
     for dataset_filename in dataset_filenames:
         with open(dataset_filename, 'r') as f:
             dataset = json.load(f)
         game_name: str = dataset['name']
         game_desc: str = dataset['description']
-        samples: list[dict] = dataset['samples'][:samples_per_file]
+        samples: list[dict] = run_exper.prepare_samples(dataset['samples'], samples_per_file, random.Random(), uniform_game_id_sampling)
         print(f'{len(samples)} samples from {dataset_filename}')
         fewshot: list[dict]
         # choose randomly, equal valid and invalid
