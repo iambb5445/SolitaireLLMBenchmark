@@ -24,7 +24,7 @@ if __name__ == '__main__':
         prompt_template = f.read()
     samples_per_file = int(sys.argv[1])
     dataset_filenames = sys.argv[2:]
-    base_dataset_names = '-'.join([(os.path.splitext(os.path.basename(dataset_filename))[0]).split('.')[0] for dataset_filename in dataset_filenames])
+    base_dataset_names = '-'.join([(os.path.splitext(os.path.basename(dataset_filename))[0]).split('_')[0] for dataset_filename in dataset_filenames])
     out_filename = os.path.join(f'finetune_dataset', f's{samples_per_file}_per_{base_dataset_names}_{int(time.time())}.json')
     json_samples: list[dict] = []
     for dataset_filename in dataset_filenames:

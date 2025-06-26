@@ -37,10 +37,10 @@ def ask_until_fail(request: str, connector: LLMConnector) -> dict[str, str]:
                 raise Exception(f"tags missing from reponse. existing tags: {response.keys()}")
             return response
         except Exception as e:
-            print(f"Response failed: {e}, response: {response_txt}\n-------------------\n\n")
+            print(f"Response failed: {e}, response: {response_txt}\n-------------------\n\n{len(request)}\n{request[-600:]}\n---\n")
         fail_count += 1
         if fail_count == max_fail_count:
-            print(f"LLM response failure {max_fail_count} times, aborted")
+            print(f"LLM response failure {max_fail_count} times, (not) aborted")
 
 def fewshot_split(samples: list[dict], seed: int) -> tuple[list[dict], list[dict]]:
     rand = random.Random(seed)
