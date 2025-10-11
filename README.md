@@ -41,6 +41,9 @@ The datasets represent a set of game progression scenarios. For each sample, the
 
 ## How to Benchmark
 
+### Tokens
+Before benchmarking, you need to set your tokens for connection to any LLM want to test. This is done by changing [`auth.py`](auth.py) tokens for any platform used.
+
 ### Run the Experiment
 Using one of the existing datasets (or creating your own using the [Solitaire framework](https://github.com/iambb5445/SolitaireGDL)) you can benchmark an llm on answer these questions using:
 
@@ -154,4 +157,6 @@ options:
                         If all samples aren't used, whether or not to try using the same number of samples from each game
 ```
 
-Note that you may want to use similar arguments to what you want to eventually use for benchmarking. For example, if you're testing the model on 4 few shot examples in training, you might also want to use 4 few shot examples when testing.
+Note that you may want to use similar arguments to what you want to eventually use for benchmarking. For example, if you're testing the model on 4 few shot examples in training, you might also want to use 4 few shot examples when testing. Same for the prompt.
+
+This step will not connect to any LLM, and does not require setting your authentication tokens to work.
