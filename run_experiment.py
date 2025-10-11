@@ -1,5 +1,5 @@
 import json
-from llm_connect import LLMConnector, OpenAILib, OpenAIChat, DeepSeekChat, GeminiChat
+from llm_connect import LLMConnector, OpenAILib, OpenAIChat, DeepSeekChat, GeminiChat, DeepInfraChat
 import random
 from tqdm import tqdm
 from joblib import delayed, Parallel
@@ -149,9 +149,10 @@ if __name__ == '__main__':
     samples: list[dict] = prepare_samples(dataset['samples'], max_count, sampling_rnd, unifrom_game_id_sampling)
     fewshot: list[dict]
     prompt = fill_prompt(prompt_template, game_name, game_desc)
-    connector = OpenAIChat(OpenAIChat.OpenAIModel.GPT_4O_mini)
+    # connector = OpenAIChat(OpenAIChat.OpenAIModel.GPT_4O_mini)
     # connector = DeepSeekChat(DeepSeekChat.DeepSeekModel.DEEP_SEEK_CHAT)
     # connector = GeminiChat(GeminiChat.GeminiModel.Gemini_15_Flash_002)
+    connector = DeepInfraChat(DeepInfraChat.DeepInfraModel.GEMINI_25_FLASH)
     if unified_fewshot:
         samples, fewshot = fewshot_split(samples, fewshot_seed)
         initiate_conversation(connector, prompt, fewshot)
@@ -170,7 +171,7 @@ if __name__ == '__main__':
     results['legal_count'] = sum([1 for sample in results['samples'] if sample['legal']])
 
     base_dataset_name = os.path.splitext(os.path.basename(dataset_filename))[0]
-    out_filename = os.path.join(f'results', f'{base_dataset_name}_{connector.model_name}_seed_{seed}_{unifrom_game_id_sampling}_{unified_fewshot}_{int(time.time())}.json')
+    out_filename = os.path.join(f'results', f'{base_dataset_name}_{f"{connector.model_name}".replace("/", "")}_seed_{seed}_{unifrom_game_id_sampling}_{unified_fewshot}_{int(time.time())}.json')
     with open(out_filename, 'w') as f:
         json.dump(results, f, indent=4)
     print(f"Results saved as {out_filename}")

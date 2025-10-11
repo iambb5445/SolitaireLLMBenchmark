@@ -123,13 +123,21 @@ class OpenAILib(LLMConnector):
         # https://platform.openai.com/docs/guides/chat-completions/overview
         return {
                 'model': self.model_name,
+                #ft0
                 # 'model': 'ft:gpt-4o-mini-2024-07-18:personal:ft0-1-100-blindalleys:BmS1GpPI',
                 # 'model': 'ft:gpt-4o-mini-2024-07-18:personal:ft0-2-100-blindalleys:BmSuJIgt',
-                'model': 'ft:gpt-4o-mini-2024-07-18:personal:ft0-3-300-blindalleys:BmT29Xyu',
+                # 'model': 'ft:gpt-4o-mini-2024-07-18:personal:ft0-2-200-blindallyes:Bma9SbDS',
+                # 'model': 'ft:gpt-4o-mini-2024-07-18:personal:ft0-3-300-blindalleys:BmT29Xyu',
+                # 'model': 'ft:gpt-4o-mini-2024-07-18:personal:ft0-3-300-blindalleys-2:BmaxO5lA',
+                #ft1
+                # 'model': 'ft:gpt-4o-mini-2024-07-18:personal:ft1-200-blindallyes-klondike-westcliff-thirtysix-whitehead:Bmcou3g5',
+                # 'model': 'ft:gpt-4o-mini-2024-07-18:personal:ft2-200-blindallyes-klondike-thirtysix-spider-scorpion:BmdRuo6N',
+                # 'model': 'ft:gpt-4o-mini-2024-07-18:personal:ft3-200-ballyes-klnd-36-sp-wasp-friendlysp-sp2s-golf-vertical-13:Bme4dwTZ', # last
                 # 'model': 'ft:gpt-4o-mini-2024-07-18:personal:2k-100-blindalleys-miniklondike-spider-50-each:BiUFQWa2',
                 # 'model': 'ft:gpt-4o-mini-2024-07-18:personal:minispider-dfsbot-1749143106-train-100-1749146401:Bf9LUd2L', # 100 finetuned model
                 # 'model': 'ft:gpt-4o-mini-2024-07-18:personal:minispider-dfsbot-1748995473-train-1748995522:BeWVSTbw', # 1118 finetuned model
                 'messages': self.chat_log + [{"role": "user", "content": prompt}],
+                'max_completion_tokens': 4000,
             }
 
     def prompt_as_API_request(self, prompt: str, request_id: str):
@@ -292,9 +300,17 @@ class DeepSeekChat(OpenAILib):
 class DeepInfraChat(OpenAILib):
     class DeepInfraModel(StrEnum):
         DEEP_SEEK_R1 = "deepseek-ai/DeepSeek-R1"
+        LLAMA_3_8B_I = "meta-llama/Meta-Llama-3-8B-Instruct"
+        LLAMA_3_70B_I = "meta-llama/Meta-Llama-3-70B-Instruct"
+        LLAMA_33_70B_I = "meta-llama/Llama-3.3-70B-Instruct"
+        GEMINI_25_FLASH = "google/gemini-2.5-flash"
     
     TOKEN_LIMITS = { # ?: https://deepinfra.com/docs/advanced/rate-limits
         DeepInfraModel.DEEP_SEEK_R1: 10_000_000,
+        DeepInfraModel.LLAMA_3_8B_I: 10_000_000,
+        DeepInfraModel.LLAMA_3_70B_I: 10_000_000,
+        DeepInfraModel.LLAMA_33_70B_I: 10_000_000,
+        DeepInfraModel.GEMINI_25_FLASH: 10_000_000,
     }
     
     CLIENT = None
