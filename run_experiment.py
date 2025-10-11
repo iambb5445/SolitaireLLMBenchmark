@@ -7,6 +7,7 @@ import copy
 import sys
 import time
 import os
+import argparse
 
 prompt_filename = 'prompt.txt'
 fewshot_seed = 42
@@ -136,11 +137,32 @@ def prepare_samples(samples: list[dict], max_count: int, sampling_rnd: random.Ra
         return samples[:max_count]
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('dataset-filename', type=str, help="The dataset json file")
+    parser.add_argument('max-count', type=int, help="Number of samples to use from the dataset")
+    parser.add_argument('seed', type=int, help="Seed for choosing the samples")
+    parser.add_argument('--prompt-filename', type=str, default=prompt_filename, help="Text file containing the prompt. You may use a new prompt. Special keywords {game_name} and {game_desc} will be replaced with the name of the game and the text description of the rules respectively.")
+    parser.add_argument('--fewshot-seed', type=int, default=fewshot_seed, help="Seed used to choose the fewshot samples")
+    parser.add_argument('--fewshot-size', type=int, default=fewshot_size, help="Number of fewshot samples to use for each request")
+    parser.add_argument('--max-fail-count', type=int, default=max_fail_count, help="How many failed attempts (connection issues, invalid response format, etc.) should be tolerated before aborting a request")
+    parser.add_argument('--thread-count', type=int, default=thread_count, help="Number of threads to parallelize the requests")
+    parser.add_argument('--thread-count', type=int, default=thread_count, help="Number of threads to parallelize the requests")
+    parser.add_argument('--unified-fewshot', action='store_true', help="Whether or not to use the same fewshot examples for all requests")
+    parser.add_argument('--non-uniform-game-id', action='store_true', help="If all samples aren't used, whether or not to try using the same number of samples from each game")
+    args = parser.parse_args(sys.argv[1:])
+    dataset_filename: str = args.dataset_filename
+    max_count: int = args.max_count
+    seed: int = args.seed
+    prompt_filename = args.prompt_filename
+    fewshot_seed = args.fewshot_seed
+    fewshot_size = args.fewshot_size
+    max_fail_count = args.max_fail_count
+    thread_count = args.thread_count
+    unified_fewshot = args.unified_fewshot
+    unifrom_game_id_sampling = not args.non_uniform_game_id
+
     with open(prompt_filename, 'r') as f:
         prompt_template = f.read()
-    dataset_filename: str = sys.argv[1]
-    max_count: int = int(sys.argv[2])
-    seed: int = int(sys.argv[3])
     with open(dataset_filename, 'r') as f:
         dataset = json.load(f)
     game_name: str = dataset['name']
