@@ -136,16 +136,33 @@ def prepare_samples(samples: list[dict], max_count: int, sampling_rnd: random.Ra
     else:
         return samples[:max_count]
 
+LLMs = dict([(model, lambda m: OpenAIChat(m)) for model in [
+    OpenAIChat.OpenAIModel.GPT_4O_mini,
+    OpenAIChat.OpenAIModel.GPT_4O,
+    OpenAIChat.OpenAIModel.GPT_Turbo_35,
+]] + [(model, lambda m: DeepSeekChat(m)) for model in [
+    DeepSeekChat.DeepSeekModel.DEEP_SEEK_CHAT,
+    DeepSeekChat.DeepSeekModel.DEEP_SEEK_REASONER,
+]] + [(model, lambda m: GeminiChat(m)) for model in [
+    GeminiChat.GeminiModel.Gemini_15_Flash_002,
+    GeminiChat.GeminiModel.Gemini_15_Pro_002,
+]] + [(model, lambda m: DeepInfraChat(m)) for model in [
+    DeepInfraChat.DeepInfraModel.LLAMA_33_70B_I,
+    DeepInfraChat.DeepInfraModel.LLAMA_3_70B_I,
+    DeepInfraChat.DeepInfraModel.LLAMA_3_8B_I,
+    DeepInfraChat.DeepInfraModel.GEMINI_25_FLASH,
+]])
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('dataset-filename', type=str, help="The dataset json file")
-    parser.add_argument('max-count', type=int, help="Number of samples to use from the dataset")
+    parser.add_argument('dataset_filename', type=str, help="The dataset json file")
+    parser.add_argument('max_count', type=int, help="Number of samples to use from the dataset")
     parser.add_argument('seed', type=int, help="Seed for choosing the samples")
+    parser.add_argument('llm', type=str, help=f"Model to use. Options are: {LLMs.keys()}. Use code to add more.")
     parser.add_argument('--prompt-filename', type=str, default=prompt_filename, help="Text file containing the prompt. You may use a new prompt. Special keywords {game_name} and {game_desc} will be replaced with the name of the game and the text description of the rules respectively.")
     parser.add_argument('--fewshot-seed', type=int, default=fewshot_seed, help="Seed used to choose the fewshot samples")
     parser.add_argument('--fewshot-size', type=int, default=fewshot_size, help="Number of fewshot samples to use for each request")
     parser.add_argument('--max-fail-count', type=int, default=max_fail_count, help="How many failed attempts (connection issues, invalid response format, etc.) should be tolerated before aborting a request")
-    parser.add_argument('--thread-count', type=int, default=thread_count, help="Number of threads to parallelize the requests")
     parser.add_argument('--thread-count', type=int, default=thread_count, help="Number of threads to parallelize the requests")
     parser.add_argument('--unified-fewshot', action='store_true', help="Whether or not to use the same fewshot examples for all requests")
     parser.add_argument('--non-uniform-game-id', action='store_true', help="If all samples aren't used, whether or not to try using the same number of samples from each game")
@@ -174,7 +191,8 @@ if __name__ == '__main__':
     # connector = OpenAIChat(OpenAIChat.OpenAIModel.GPT_4O_mini)
     # connector = DeepSeekChat(DeepSeekChat.DeepSeekModel.DEEP_SEEK_CHAT)
     # connector = GeminiChat(GeminiChat.GeminiModel.Gemini_15_Flash_002)
-    connector = DeepInfraChat(DeepInfraChat.DeepInfraModel.GEMINI_25_FLASH)
+    # connector = DeepInfraChat(DeepInfraChat.DeepInfraModel.GEMINI_25_FLASH)
+    connector = LLMs[args.llm](args.llm)
     if unified_fewshot:
         samples, fewshot = fewshot_split(samples, fewshot_seed)
         initiate_conversation(connector, prompt, fewshot)
