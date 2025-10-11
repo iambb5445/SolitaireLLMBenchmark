@@ -8,6 +8,7 @@ import sys
 import time
 import os
 import run_experiment as run_exper
+import argparse
 
 thread_count = 50
 unified_fewshot: bool = False
@@ -20,10 +21,24 @@ def get_finetune(connector: OpenAIChat, sample: dict) -> dict:
     return connector.as_fine_tuning_example()
 
 if __name__ == '__main__':
-    with open(run_exper.prompt_filename, 'r') as f:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('samples_per_file', type=int, help="Number of samples to use from the each dataset file")
+    parser.add_argument('dataset_filenames', type=str, nargs='*', help="All the dataset files")
+    parser.add_argument('--prompt-filename', type=str, default=run_exper.prompt_filename, help="Text file containing the prompt. You may use a new prompt. Special keywords {game_name} and {game_desc} will be replaced with the name of the game and the text description of the rules respectively.")
+    parser.add_argument('--fewshot-seed', type=int, default=run_exper.fewshot_seed, help="Seed used to choose the fewshot samples")
+    parser.add_argument('--thread-count', type=int, default=thread_count, help="Number of threads to parallelize the requests")
+    parser.add_argument('--unified-fewshot', action='store_true', help="Whether or not to use the same fewshot examples for all requests")
+    parser.add_argument('--non-uniform-game-id', action='store_true', help="If all samples aren't used, whether or not to try using the same number of samples from each game")
+    args = parser.parse_args(sys.argv[1:])
+    samples_per_file = args.samples_per_file
+    dataset_filenames = args.dataset_filenames
+    prompt_filename = args.prompt_filename
+    fewshot_seed = args.fewshot_seed
+    unified_fewshot = args.unified_fewshot
+    unifrom_game_id_sampling = not args.non_uniform_game_id
+
+    with open(prompt_filename, 'r') as f:
         prompt_template = f.read()
-    samples_per_file = int(sys.argv[1])
-    dataset_filenames = sys.argv[2:]
     base_dataset_names = '-'.join([(os.path.splitext(os.path.basename(dataset_filename))[0]).split('_')[0] for dataset_filename in dataset_filenames])
     out_filename = os.path.join(f'finetune_dataset', f's{samples_per_file}_per_{base_dataset_names}_{int(time.time())}.json')
     json_samples: list[dict] = []
@@ -40,9 +55,9 @@ if __name__ == '__main__':
         prompt = run_exper.fill_prompt(prompt_template, game_name, game_desc)
         connector = OpenAIChat(OpenAIChat.OpenAIModel.GPT_4O_mini)
         if unified_fewshot:
-            samples, fewshot = run_exper.fewshot_split(samples, run_exper.fewshot_seed)
+            samples, fewshot = run_exper.fewshot_split(samples, fewshot_seed)
             run_exper.initiate_conversation(connector, prompt, fewshot)
-        fewshot_rnd = random.Random(run_exper.fewshot_seed) # only used for non-unified
+        fewshot_rnd = random.Random(fewshot_seed) # only used for non-unified
         for i, sample in enumerate(samples):
             connector_copy = connector.copy()
             if not unified_fewshot:
