@@ -1,6 +1,7 @@
 import sys
 import json
 from typing import Callable
+import argparse
 
 def print_per_move(samples: list[dict], counts: Callable[[dict], bool], is_correct: Callable[[dict], bool]):
     move_type_count = dict()
@@ -16,7 +17,10 @@ def print_per_move(samples: list[dict], counts: Callable[[dict], bool], is_corre
         print(f"{k}: {move_type_correct[k]}/{move_type_count[k]} - {move_type_correct[k]/move_type_count[k]}")
 
 if __name__ == '__main__':
-    results_filename = sys.argv[1]
+    parser = argparse.ArgumentParser()
+    parser.add_argument('result_filename', type=str, help="The result file")
+    args = parser.parse_args(sys.argv[1:])
+    results_filename = args.result_filename
     with open(results_filename, 'r') as f:
         results = json.load(f)
     if 'is_valid' in results['samples'][0]:
